@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0, user-scalable=no" />
+<style type="text/css">
+	html { height: 100% }
+	body { height: 100%; margin: 0; padding: 0 }
+	#map_canvas { height: 100% }
+</style>
+<link rel="stylesheet" href="style.css">
+<!--Googleマップ生成-->
+<script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?&region=JP&language=ja&sensor=true"></script>
+<script type="text/javascript">
+//マップオブジェクト設定
+var mapObj;
+//東京駅を緯度・軽度の初期値に設定
+var start="東京駅";
+var posX=139.766268;
+var posY=35.681307;
+//マップ作成
+google.maps.event.addDomListener(window, 'load', function(){
+	//初期設定
+	var map = document.getElementById("map_canvas");
+	var options = {
+		zoom: 15,
+		center: new google.maps.LatLng(posY, posX),
+		mapTypeId: google.maps.MapTypeId.ROADMAP
+	};
+	mapObj = new google.maps.Map(map, options);  
+	//中心に設定
+	var pos = new google.maps.LatLng(posY, posX);
+	var infowindow = new google.maps.InfoWindow({ map: mapObj, position: pos, content: start});
+	mapObj.setCenter(pos);
+	//CSVファイル読み込み
+	var xhr = new XMLHttpRequest();
+	xhr.onload = function(){
+		var tempArray = xhr.responseText.split("\n");
+		csvArray = new Array();
+		for(var i=0;i<tempArray.length;i++){
+			csvArray[i] = tempArray[i].split(",");
+			var data = csvArray[i];
+			//マーカー作成　画像ファイルを読み込み 32x32 pixel
+			var image = 'icon_tokyo.png';
+			var marker_image = new google.maps.MarkerImage(
+				image,
+				new google.maps.Size(32,32), //画像サイズ
+				new google.maps.Point(0,0), //画像描画開始位置
+				new google.maps.Point(15,15) //基準点
+			);
+			var marker = new google.maps.Marker({
+				position: new google.maps.LatLng( parseFloat(data[0]), parseFloat(data[1]) ),
+				map: mapObj,
+				icon: marker_image,
+				title: data[2]
+			});
+			//マーカーをタップすると表示するInfoWindow
+			createInfoWindow(marker, data[2]);
+		}
+	};
+	xhr.open("get", "tokyo.csv", true);
+	xhr.send(null);
+});
+
+function createInfoWindow(getmarker, name){
+	var infowin = new google.maps.InfoWindow({ content: name });
+	//マウスオーバー
+	google.maps.event.addListener(getmarker, 'mouseover', function() {
+		infowin.open(getmarker.getMap(), getmarker);
+	});
+	//マウスアウト
+	google.maps.event.addListener(getmarker, 'mouseout', function(){
+		infowin.close();
+	});
+	//クリックでリンク先へ遷移
+	/*スマホでタッチするとすぐに施設HPへジャンプしてしまうため、結局、無効化している
+	google.maps.event.addListener(getmarker, 'click', function(){
+		window.open(url);
+	});
+	*/
+	//ダブルクリックでリンク先へ遷移
+	google.maps.event.addListener(getmarker, 'dblclick', function(){
+		window.open(url);
+	});
+}
+</script>
+</head>
+<body>
+<div id="map_container">
+	<div id="map_canvas"></div>
+</div>
+</body>
+</html>
